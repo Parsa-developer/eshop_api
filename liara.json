@@ -1,0 +1,13 @@
+{
+  "app": "eshop-parsa",
+  "port": 80,
+  "build": {
+    "location": "iran"
+  },
+  "disks": [
+    {
+      "name": "eshop-disk",
+      "mountTo": "path/to/folder"
+    }
+  ]
+}
