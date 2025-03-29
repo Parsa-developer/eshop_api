@@ -136,17 +136,3 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# LIARA_ENDPOINT    = os.getenv("https://storage.c2.liara.space")
-# LIARA_BUCKET_NAME = os.getenv("bucket-eshop")
-# LIARA_ACCESS_KEY  = os.getenv("kmp75mi914f2973f")
-# LIARA_SECRET_KEY  = os.getenv("897ae1d2-a7d5-4ece-a788-0078185489f6")
-
-# STORAGES = {
-#   "default": {
-#       "BACKEND": "storages.backends.s3.S3Storage",
-#   },
-#   "staticfiles": {
-#       "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-#   },
-# }
