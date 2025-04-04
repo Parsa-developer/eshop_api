@@ -3,12 +3,14 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Product, ProductStorageOption, ProductBrand, ProductCategory, ProductColor
 from .serializer import ProductSerializer, ProductDetailSerializer, BrandSerializer, CategorySerializer, ColorSerializer, StorageSerializer
 
 # Create your views here.
 
 class ProductListView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request, *args, **kwargs):
         queryset = Product.objects.all()
         params = request.query_params
@@ -55,29 +57,28 @@ class ProductListView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# class ProductDetailView(APIView):
-#     def get(self, request, *args, **kwargs):
-#         product = Product.objects.get(slug=kwargs['slug'])
-#         serializer = ProductDetailSerializer(product)
-#         return Response(serializer.data)
-
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [AllowAny]
     queryset = Product.objects.all()
     serializer_class = ProductDetailSerializer
     lookup_field = 'slug'
 
 class BrandCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
     queryset = ProductBrand.objects.all()
     serializer_class = BrandSerializer
 
 class CategoryCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
     queryset = ProductCategory.objects.all()
     serializer_class = CategorySerializer
 
 class ColorCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
     queryset = ProductColor.objects.all()
     serializer_class = ColorSerializer
 
 class StorageCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
     queryset = ProductStorageOption.objects.all()
     serializer_class = StorageSerializer
