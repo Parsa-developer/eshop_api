@@ -81,6 +81,8 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware'
 ]
 
+AUTH_USER_MODEL = 'account_module.User'
+
 ROOT_URLCONF = 'eshop.urls'
 
 TEMPLATES = [

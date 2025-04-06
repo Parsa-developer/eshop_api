@@ -1,10 +1,11 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
-from .serializer import UserSerializer
+from .serializer import UserSerializer, UserRegisterSerializer, UserLoginSerializer
 from .models import User
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.contrib.auth import login, logout, authenticate
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 # Create your views here.
@@ -13,7 +14,7 @@ class UserRegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
+        serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
             phone_number = request.data.get("phone_number")
             password = request.data.get("password")
@@ -22,6 +23,7 @@ class UserRegisterView(APIView):
                     "error": "phone number is already registered."
                 })
             serializer.save(phone_number=phone_number, password=password)
+            
             return Response({
                 "message": "User signed up successfully."
             })
@@ -39,13 +41,44 @@ class UserLoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        phone_number = request.data.get('phone_number')
-        password = request.data.get('password')
+        serializer = UserLoginSerializer(data=request.data)
+        if serializer.is_valid:
+            phone_number = request.data.get('phone_number')
+            password = request.data.get('password')
 
-        user = User.objects.get(phone_number=phone_number, password=password)
-        if user:
-            return Response({
-                'message': 'Login successful.'
-            }, status=status.HTTP_200_OK)
+            user = User.objects.get(phone_number=phone_number)
+            if user:
+                if user.check_password(password):
+                    login(request, user)
+                    return Response({
+                        'message': 'Login successful.'
+                    }, status=status.HTTP_200_OK)
+                else:
+                    return Response({
+                        'error': 'Invalid information'
+                    })
+            else:
+                return Response({'error': 'Invalid phone number or password.'}, status=status.HTTP_401_UNAUTHORIZED)
         else:
-            return Response({'error': 'Invalid phone number or password.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({
+                'error': 'Invalid information'
+            })
+
+class UserLogoutView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        logout(request)
+        return Response({
+            'success': 'You logged out!'
+        })
+    
+class CheckAuthAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({
+            "is_authenticated": True,
+            "user": str(request.user)  # Or serialize user data
+        })
