@@ -10,4 +10,7 @@ urlpatterns = [
     path('categories/', views.CategoryCreateView.as_view(), name='category-list'),
     path('colors/', views.ColorCreateView.as_view(), name='color-list'),
     path('storages/', views.StorageCreateView.as_view(), name='storage-list'),
+    path('cart/', views.ShoppingCartAPIView.as_view()),
+    path('cart/items/', views.CartItemCreateAPIView.as_view()),
+    path('cart/items/<int:id>', views.CartItemUpdateDestroyAPIView.as_view())
 ]

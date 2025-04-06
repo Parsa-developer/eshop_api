@@ -30,7 +30,11 @@ class CartItem(models.Model):
         return f"{self.product.name} - {self.quantity}"
 
 class ShoppingCart(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='cart')
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.user.phone_number
 
 class ProductCategory(models.Model):
     title = models.CharField(max_length=200)

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, ProductBrand, ProductCategory, ProductColor, ProductStorageOption
+from .models import Product, ProductBrand, ProductCategory, ProductColor, ProductStorageOption, ShoppingCart, CartItem
 
 
 class BrandSerializer(serializers.ModelSerializer):
@@ -70,3 +70,39 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         data['category'] = [category.title for category in instance.category.all() if category.is_active]
         data['storages'] = [storage.capacity for storage in instance.storages.all()]
         return data
+    
+class CartItemSerializer(serializers.ModelSerializer):
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset = Product.objects.all(),
+        source = 'product'
+    )
+
+    product = ProductSerializer()
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        model = CartItem
+        fields = '__all__'
+
+    def validate_quantity(self, value):
+        if value < 1:
+            raise serializers.ValidationError("Quantity must be at least 1")
+        return value
+    
+    def validate(self, data):
+        product = data.get('product')
+        quantity = data.get('quantity', 1)
+
+        if product.inventory < quantity:
+            raise serializers.ValidationError(
+                {'quantity': f'Not enough inventory. Only {product.inventory} available.'}
+            )
+        return data
+    
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(many=True)
+    total = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        model = ShoppingCart, Product
+        fields = '__all__'
