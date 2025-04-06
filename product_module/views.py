@@ -88,7 +88,7 @@ class ShoppingCartAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        cart = ShoppingCart.objects.get_or_create(user=request.user)
+        cart, created = ShoppingCart.objects.get_or_create(user=request.user)
         serializer = ShoppingCartSerializer(cart)
         return Response(serializer.data)
 
@@ -101,10 +101,11 @@ class CartItemCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        cart = request.user.cart
+        cart, created = ShoppingCart.objects.get_or_create(user=request.user)
+        
         serializer = CartItemSerializer(
             data=request.data,
-            context={'cart': cart}
+            context={'cart': cart, 'request': request}
         )
         serializer.is_valid(raise_exception=True)
         serializer.save(cart=cart)
@@ -114,34 +115,10 @@ class CartItemUpdateDestroyAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
+        ShoppingCart.objects.get_or_create(user=self.request.user)
         return get_object_or_404(
             CartItem,
             pk=pk,
             cart__user=self.request.user
         )
-
-    def put(self, request, pk):
-        cart_item = self.get_object(pk)
-        serializer = CartItemSerializer(
-            cart_item,
-            data=request.data,
-            partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        
-        # Manual inventory check for updates
-        new_quantity = serializer.validated_data.get('quantity')
-        if new_quantity and new_quantity > cart_item.product.inventory:
-            return Response(
-                {'quantity': 'Requested quantity exceeds available inventory'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-            
-        serializer.save()
-        return Response(serializer.data)
-
-    def delete(self, request, pk):
-        cart_item = self.get_object(pk)
-        cart_item.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 

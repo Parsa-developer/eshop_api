@@ -73,30 +73,40 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     
 class CartItemSerializer(serializers.ModelSerializer):
     product_id = serializers.PrimaryKeyRelatedField(
-        queryset = Product.objects.all(),
-        source = 'product'
+        queryset=Product.objects.all(),
+        source='product',
+        write_only=True
     )
-
-    product = ProductSerializer()
-    total_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    product = ProductSerializer(read_only=True)
+    total_price = serializers.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        read_only=True
+    )
 
     class Meta:
         model = CartItem
-        fields = '__all__'
+        fields = [
+            'id', 
+            'product', 
+            'product_id', 
+            'quantity', 
+            'total_price', 
+            'added_at'
+        ]
+        read_only_fields = [
+            'id', 
+            'product', 
+            'total_price', 
+            'added_at'
+        ]
 
     def validate_quantity(self, value):
         if value < 1:
             raise serializers.ValidationError("Quantity must be at least 1")
         return value
-    
-    def validate(self, data):
-        product = data.get('product')
-        quantity = data.get('quantity', 1)
 
-        if product.inventory < quantity:
-            raise serializers.ValidationError(
-                {'quantity': f'Not enough inventory. Only {product.inventory} available.'}
-            )
+    def validate(self, data):
         return data
     
 class ShoppingCartSerializer(serializers.ModelSerializer):

@@ -24,7 +24,8 @@ class Address(models.Model):
 class CartItem(models.Model):
     product = models.ForeignKey('Product', on_delete=models.CASCADE)
     quantity = models.IntegerField()
-    shopping_cart = models.ForeignKey('ShoppingCart', on_delete=models.CASCADE)
+    cart = models.ForeignKey('ShoppingCart', on_delete=models.CASCADE, related_name='items')
+    added_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.product.name} - {self.quantity}"
