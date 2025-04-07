@@ -84,41 +84,55 @@ class StorageCreateView(generics.ListCreateAPIView):
     queryset = ProductStorageOption.objects.all()
     serializer_class = StorageSerializer
 
-class ShoppingCartAPIView(APIView):
+class ShoppingCartAPIView(generics.RetrieveUpdateAPIView):
+    serializer_class = ShoppingCartSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        cart, created = ShoppingCart.objects.get_or_create(user=request.user)
+    def get_object(self):
+        cart, created = ShoppingCart.objects.get_or_create(user=self.request.user)
+        return cart
+    
+    def get(self, request, *args, **kwargs):
+        cart = self.get_object()
         serializer = ShoppingCartSerializer(cart)
         return Response(serializer.data)
+    
+    def post(self, request, *args, **kwargs):
+        cart = self.get_object()
+        serializer = CartItemSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(cart=cart)
+            cart_serializer = ShoppingCartSerializer(cart)
+            return Response(cart_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request):
-        cart = get_object_or_404(ShoppingCart, user=request.user)
-        cart.items.all().delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-class CartItemCreateAPIView(APIView):
+class CartItemUpdateView(generics.UpdateAPIView):
+    serializer_class = CartItemSerializer
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        cart, created = ShoppingCart.objects.get_or_create(user=request.user)
-        
-        serializer = CartItemSerializer(
-            data=request.data,
-            context={'cart': cart, 'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save(cart=cart)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-class CartItemUpdateDestroyAPIView(APIView):
+    def get_queryset(self):
+        return CartItem.objects.filter(cart__user=self.request.user)
+    
+    def update(self, request, *args, **kwargs):
+        cart_item = self.get_object()
+        serializer = self.get_serializer(cart_item, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            cart = cart_item.cart
+            cart_serializer = ShoppingCartSerializer(cart)
+            return Response(cart_serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class CartItemDeleteView(generics.DestroyAPIView):
+    serializer_class = CartItemSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, pk):
-        ShoppingCart.objects.get_or_create(user=self.request.user)
-        return get_object_or_404(
-            CartItem,
-            pk=pk,
-            cart__user=self.request.user
-        )
-
+    def get_queryset(self):
+        return CartItem.objects.filter(cart__user=self.request.user)
+    
+    def destroy(self, request, *args, **kwargs):
+        cart_item = self.get_object()
+        cart = cart_item.cart
+        cart_item.delete()
+        cart_serializer = ShoppingCartSerializer(cart)
+        return Response(cart_serializer.data, status=status.HTTP_200_OK)

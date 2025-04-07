@@ -78,11 +78,6 @@ class CartItemSerializer(serializers.ModelSerializer):
         write_only=True
     )
     product = ProductSerializer(read_only=True)
-    total_price = serializers.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        read_only=True
-    )
 
     class Meta:
         model = CartItem
@@ -90,29 +85,19 @@ class CartItemSerializer(serializers.ModelSerializer):
             'id', 
             'product', 
             'product_id', 
-            'quantity', 
-            'total_price', 
+            'quantity',
             'added_at'
         ]
-        read_only_fields = [
-            'id', 
-            'product', 
-            'total_price', 
-            'added_at'
-        ]
-
-    def validate_quantity(self, value):
-        if value < 1:
-            raise serializers.ValidationError("Quantity must be at least 1")
-        return value
-
-    def validate(self, data):
-        return data
     
 class ShoppingCartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True)
-    total = serializers.DecimalField(max_digits=10, decimal_places=2)
+    user = serializers.IntegerField(read_only=True, source='user.id')
+    total_price = serializers.SerializerMethodField()
 
     class Meta:
-        model = ShoppingCart, Product
-        fields = '__all__'
+        model = ShoppingCart
+        fields = ['id', 'user', 'created_at', 'items', 'total_price']
+
+    def get_total_price(self, obj):
+        total = sum(item.product.original_price * item.quantity for item in obj.items.all())
+        return float(total)
