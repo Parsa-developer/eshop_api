@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, ProductBrand, ProductCategory, ProductColor, ProductStorageOption, ShoppingCart, CartItem
+from .models import Product, Comment, ProductBrand, ProductCategory, ProductColor, ProductStorageOption, ShoppingCart, CartItem
 
 
 class BrandSerializer(serializers.ModelSerializer):
@@ -56,7 +56,6 @@ class ProductSerializer(serializers.ModelSerializer):
         product.colors.set(colors)
         product.storages.set(storages)
         return product
-    
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -101,3 +100,16 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     def get_total_price(self, obj):
         total = sum(item.product.original_price * item.quantity for item in obj.items.all())
         return float(total)
+    
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    create_time = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'user', 'text', 'create_time']
+        read_only_fields = ['id', 'user', 'create_time']
+
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)

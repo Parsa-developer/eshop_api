@@ -3,10 +3,11 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework.views import APIView
+from rest_framework.exceptions import NotFound
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Product, ProductStorageOption, ProductBrand, ProductCategory, ProductColor, ShoppingCart, CartItem
-from .serializer import ProductSerializer, ProductDetailSerializer, BrandSerializer, CategorySerializer, ColorSerializer, StorageSerializer, ShoppingCartSerializer, CartItemSerializer
+from .models import Product, Comment, ProductStorageOption, ProductBrand, ProductCategory, ProductColor, ShoppingCart, CartItem
+from .serializer import ProductSerializer, CommentSerializer, ProductDetailSerializer, BrandSerializer, CategorySerializer, ColorSerializer, StorageSerializer, ShoppingCartSerializer, CartItemSerializer
 
 # Create your views here.
 
@@ -136,3 +137,19 @@ class CartItemDeleteView(generics.DestroyAPIView):
         cart_item.delete()
         cart_serializer = ShoppingCartSerializer(cart)
         return Response(cart_serializer.data, status=status.HTTP_200_OK)
+
+class CommentListCreateView(generics.ListCreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        product_id = self.kwargs['slug']
+        return Comment.objects.filter(product__slug=product_id)
+    
+    def perform_create(self, serializer):
+        product_id = self.kwargs['slug']
+        try:
+            product = Product.objects.get(slug=product_id)
+        except Product.DoesNotExist:
+            raise NotFound("Product Not Found")
+        serializer.save(product=product)
